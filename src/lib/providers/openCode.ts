@@ -1,6 +1,17 @@
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { generatedQuestionSchema } from "../schema";
 import { runExecFile } from "./execUtil";
 import { buildPrompt, buildCorrectionPrompt, type ContentProvider, type GenerateQuestionParams, type RegenerateParams } from "./types";
+
+// motivo: o PATH herdado pelo processo do `next dev` (ex.: iniciado por IDE/systemd) nem sempre inclui
+// o diretório de instalação do opencode, mesmo que ele esteja no PATH de um shell interativo do usuário.
+function resolveOpenCodeBin(): string {
+  if (process.env.OPENCODE_BIN) return process.env.OPENCODE_BIN;
+  const defaultInstallPath = join(homedir(), ".opencode", "bin", "opencode");
+  return existsSync(defaultInstallPath) ? defaultInstallPath : "opencode";
+}
 
 const JSON_SHAPE_HINT = JSON.stringify({
   prompt: "",
@@ -35,7 +46,7 @@ async function callOpenCode(promptText: string, precisaFonte: boolean) {
   const fullPrompt = `${promptText}\n\nRespond with ONLY a single JSON object matching this exact shape, no prose, no markdown fences:\n${JSON_SHAPE_HINT}`;
 
   const { stdout } = await runExecFile(
-    "opencode",
+    resolveOpenCodeBin(),
     ["run", fullPrompt, "--agent", agent, "--format", "json"],
     120_000
   );
