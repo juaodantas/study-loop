@@ -2,14 +2,27 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* O tema segue o sistema (prefers-color-scheme) e pode ser forçado com as
+   classes .dark / .light no <html>. A variante `dark:` precisa cobrir os dois
+   casos, senão os refinamentos dark dos componentes shadcn nunca aplicam no
+   modo escuro do sistema. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) { /* motivo: media query de tema do sistema, não supressão de erro */
+    &:where(:not(.light, .light *)) {
+      @slot;
+    }
+  }
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +52,18 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Tokens semânticos do domínio: cor de sinal (ação/progresso), streak e o par
+     acerto/erro. Existem para que as páginas não precisem de cores hardcoded
+     nem de variantes `dark:`. */
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-signal-surface: var(--signal-surface);
+  --color-streak: var(--streak);
+  --color-streak-surface: var(--streak-surface);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +73,79 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@theme {
+  --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
+
+  @keyframes indeterminate {
+    0% {
+      transform: translateX(-100%) scaleX(0.35);
+    }
+    50% {
+      transform: translateX(25%) scaleX(0.7);
+    }
+    100% {
+      transform: translateX(130%) scaleX(0.35);
+    }
+  }
+}
+
+/* Um valor por token via light-dark(): o par claro/escuro fica lado a lado em
+   vez de duplicado em dois blocos que saem de sincronia. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  color-scheme: light dark;
+
+  --background: light-dark(oklch(0.99 0.003 250), oklch(0.18 0.014 258));
+  --foreground: light-dark(oklch(0.19 0.015 255), oklch(0.955 0.005 250));
+  --card: light-dark(oklch(1 0 0), oklch(0.225 0.016 258));
+  --card-foreground: light-dark(oklch(0.19 0.015 255), oklch(0.955 0.005 250));
+  --popover: light-dark(oklch(1 0 0), oklch(0.225 0.016 258));
+  --popover-foreground: light-dark(oklch(0.19 0.015 255), oklch(0.955 0.005 250));
+  --primary: light-dark(oklch(0.55 0.115 215), oklch(0.74 0.115 210));
+  --primary-foreground: light-dark(oklch(0.99 0.01 215), oklch(0.18 0.03 240));
+  --secondary: light-dark(oklch(0.955 0.006 255), oklch(0.28 0.016 258));
+  --secondary-foreground: light-dark(oklch(0.25 0.015 255), oklch(0.96 0.005 250));
+  --muted: light-dark(oklch(0.96 0.005 255), oklch(0.275 0.016 258));
+  --muted-foreground: light-dark(oklch(0.5 0.02 255), oklch(0.72 0.02 255));
+  --accent: light-dark(oklch(0.955 0.008 250), oklch(0.29 0.018 258));
+  --accent-foreground: light-dark(oklch(0.22 0.015 255), oklch(0.96 0.005 250));
+  --destructive: light-dark(oklch(0.55 0.2 25), oklch(0.7 0.17 24));
+  --border: light-dark(oklch(0.9 0.007 255), oklch(1 0 0 / 12%));
+  --input: light-dark(oklch(0.9 0.007 255), oklch(1 0 0 / 15%));
+  --ring: light-dark(oklch(0.6 0.1 215), oklch(0.6 0.09 210));
+
+  --signal: light-dark(oklch(0.55 0.115 215), oklch(0.74 0.115 210));
+  --signal-foreground: light-dark(oklch(0.99 0.01 215), oklch(0.18 0.03 240));
+  --signal-surface: light-dark(oklch(0.955 0.025 215), oklch(0.3 0.05 215));
+  --streak: light-dark(oklch(0.62 0.14 60), oklch(0.8 0.13 70));
+  --streak-surface: light-dark(oklch(0.96 0.035 70), oklch(0.32 0.055 70));
+  --success: light-dark(oklch(0.5 0.13 150), oklch(0.72 0.15 152));
+  --success-surface: light-dark(oklch(0.955 0.035 150), oklch(0.3 0.055 152));
+  --danger: light-dark(oklch(0.52 0.19 25), oklch(0.7 0.17 25));
+  --danger-surface: light-dark(oklch(0.96 0.028 25), oklch(0.32 0.07 25));
+
+  --chart-1: var(--signal);
+  --chart-2: var(--success);
+  --chart-3: var(--streak);
+  --chart-4: var(--danger);
+  --chart-5: var(--muted-foreground);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: light-dark(oklch(0.975 0.005 255), oklch(0.205 0.015 258));
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+/* Escapes para forçar um tema no <html>, se um toggle for adicionado depois. */
+.light {
+  color-scheme: light;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -126,5 +157,22 @@
   }
   html {
     @apply font-sans;
+    /* Escala da interface. Como tudo é medido em rem, mexer só aqui cresce
+       texto, altura de botão, espaçamento e largura de coluna juntos, em vez de
+       ajustar tela por tela. Percentual (e não px) pra respeitar quem já mexeu
+       no tamanho de fonte padrão do navegador. */
+    font-size: 112.5%; /* 18px, contra os 16px padrão */
+  }
+}
+
+/* Transições decorativas somem com reduced-motion. Animações (barra de
+   atividade, fade das piadas) são tratadas caso a caso com a variante
+   `motion-reduce:` para que o indicador de "está acontecendo algo" não
+   desapareça junto. */
+@media (prefers-reduced-motion: reduce) { /* motivo: preferência de acessibilidade do usuário, não supressão de erro */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }

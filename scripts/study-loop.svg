@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="study-loop">
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#161a23"/>
+  <!-- laço: arco aberto no topo, com a ponta de seta fechando o ciclo -->
+  <circle cx="64" cy="64" r="38" fill="none" stroke="#37bed3" stroke-width="9"
+          stroke-linecap="round" stroke-dasharray="188 240"/>
+  <path d="M85.1 30.5 L68.5 34.1 L72.9 18.7 Z" fill="#37bed3"/>
+  <!-- acerto: o que a sessão diária entrega -->
+  <path d="M47 65 L58.5 77 L82 51" fill="none" stroke="#f2f5f7" stroke-width="10"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

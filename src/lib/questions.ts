@@ -29,6 +29,7 @@ export interface SessionRow {
   topic_id: number | null;
   question_count_target: number;
   completed: number;
+  generation_status: "generating" | "ready" | "failed";
 }
 
 const RECENT_PROMPTS_LIMIT = 5;
@@ -68,15 +69,46 @@ export async function generateNextQuestion(topic: Topic, sessionId: number | nul
     .get(result.lastInsertRowid) as QuestionRow;
 }
 
-// Gera todas as perguntas da sessão de uma vez, na criação, para que o quiz
-// nunca precise esperar a IA responder entre uma pergunta e outra.
-export async function generateQuestionsForSession(session: SessionRow): Promise<QuestionRow[]> {
-  const questions: QuestionRow[] = [];
-  for (let i = 0; i < session.question_count_target; i++) {
-    const topic = pickTopicForSession(session.mode, session.topic_id);
-    questions.push(await generateNextQuestion(topic, session.id));
+// Quantas chamadas ao provider de IA (cada uma é um subprocesso) podem rodar
+// simultaneamente ao gerar o restante das perguntas de uma sessão em background.
+const BACKGROUND_GENERATION_CONCURRENCY = 3;
+
+async function mapWithConcurrency<T>(count: number, concurrency: number, fn: (index: number) => Promise<T>): Promise<void> {
+  let cursor = 0;
+  async function worker() {
+    while (cursor < count) {
+      const index = cursor++;
+      await fn(index);
+    }
   }
-  return questions;
+  await Promise.all(Array.from({ length: Math.min(concurrency, count) }, worker));
+}
+
+// Gera todas as perguntas da sessão em paralelo (limitado por concorrência).
+// Roda depois da resposta de criação da sessão (via `after()` no route handler),
+// então o usuário navega na hora e a tela da sessão faz poll enquanto isso.
+// Falhas individuais são best-effort: registramos e seguimos, para não perder a
+// sessão inteira por causa de uma única chamada de IA que falhou. Se nenhuma
+// pergunta ficou de pé, a sessão é marcada como `failed` para a UI poder
+// mostrar erro em vez de esperar para sempre.
+export async function generateAllSessionQuestions(session: SessionRow): Promise<void> {
+  await mapWithConcurrency(session.question_count_target, BACKGROUND_GENERATION_CONCURRENCY, async () => {
+    try {
+      const topic = pickTopicForSession(session.mode, session.topic_id);
+      await generateNextQuestion(topic, session.id);
+    } catch (err) {
+      console.error(`failed to generate question for session ${session.id}`, err);
+    }
+  });
+
+  const { generated } = db
+    .prepare(`SELECT COUNT(*) as generated FROM questions WHERE session_id = ?`)
+    .get(session.id) as { generated: number };
+
+  db.prepare(`UPDATE sessions SET generation_status = ? WHERE id = ?`).run(
+    generated > 0 ? "ready" : "failed",
+    session.id
+  );
 }
 
 export function getNextSessionQuestion(sessionId: number): (QuestionRow & { topic_name: string }) | undefined {

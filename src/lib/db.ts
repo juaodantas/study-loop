@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   topic_id INTEGER REFERENCES topics(id),
   question_count_target INTEGER NOT NULL,
   completed INTEGER NOT NULL DEFAULT 0,
+  generation_status TEXT NOT NULL DEFAULT 'ready',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -49,6 +50,12 @@ CREATE TABLE IF NOT EXISTS attempts (
   correct INTEGER NOT NULL,
   answered_index INTEGER NOT NULL,
   answered_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS reports (
@@ -62,6 +69,11 @@ CREATE TABLE IF NOT EXISTS reports (
 const questionColumns = db.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
 if (!questionColumns.some((col) => col.name === "session_id")) {
   db.exec(`ALTER TABLE questions ADD COLUMN session_id INTEGER REFERENCES sessions(id)`);
+}
+
+const sessionColumns = db.prepare(`PRAGMA table_info(sessions)`).all() as { name: string }[];
+if (!sessionColumns.some((col) => col.name === "generation_status")) {
+  db.exec(`ALTER TABLE sessions ADD COLUMN generation_status TEXT NOT NULL DEFAULT 'ready'`);
 }
 
 export default db;

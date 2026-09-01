@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,20 +24,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <nav className="border-b px-4 py-3 text-sm">
-          <div className="mx-auto flex max-w-2xl gap-4">
-            <Link href="/" className="font-medium">
-              study-loop
-            </Link>
-            <Link href="/topics" className="text-muted-foreground hover:text-foreground">
-              Temas
-            </Link>
-            <Link href="/review" className="text-muted-foreground hover:text-foreground">
-              Revisão
-            </Link>
-          </div>
-        </nav>
+      <body className="flex min-h-full flex-col">
+        <SiteNav />
         {children}
       </body>
     </html>
